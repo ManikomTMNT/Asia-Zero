@@ -60,6 +60,17 @@ public class PlayerMovement : MonoBehaviour {
 
 	Vector2 dash_direction;
 
+	static PlayerMovement instance;
+
+	void Awake() {
+		if (instance == null) {
+			instance = this;
+			DontDestroyOnLoad(gameObject);
+		} else if (instance != this) {
+			Destroy(gameObject);
+		}
+	}
+
 	void Start() {
 		boxcollider = GetComponent<BoxCollider2D>();
 		rb = GetComponent<Rigidbody2D>();
