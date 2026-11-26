@@ -26,13 +26,16 @@ public class PlayerMovement : MonoBehaviour {
 	bool is_bouncing = false;
 	bool is_charging_bounce = false;
 	Vector2 bounce_direction;
+
 	[SerializeField] float bounce_force = 15f;
 	PlayerBounceHitbox bounce_hitbox;
 
-	[SerializeField] float bounce_decay = 0.15f;
-	[SerializeField] float bounce_decay_increase = 0.08f;
-	float bounce_min_speed = 5f;
+	[SerializeField] float bounce_decay = 1.5f;
+	float bounce_decay_increase = 7f;
+	[SerializeField] float bounce_min_speed = 5f;
 	[SerializeField] float bounce_rebound_force = 15f;
+	[SerializeField] float bounce_rebound_decay_bonus = 0.5f;
+	[SerializeField] float bounce_floor_min_up_speed = 6f;
 
 	float current_bounce_decay;
 
@@ -46,7 +49,6 @@ public class PlayerMovement : MonoBehaviour {
 	bool has_air_dashed = false;
 
 	GameObject bouncernouncer;
-
 
 	int dir = 1;
 
@@ -74,13 +76,14 @@ public class PlayerMovement : MonoBehaviour {
 	void Start() {
 		boxcollider = GetComponent<BoxCollider2D>();
 		rb = GetComponent<Rigidbody2D>();
-		animator = GetComponent<Animator> ();
-		sprite = GetComponent<SpriteRenderer> ();
+		animator = GetComponent<Animator>();
+		sprite = GetComponent<SpriteRenderer>();
 
 		atk_hitbox = transform.Find("AttackHitbox").GetComponent<PlayerAttackHitbox>();
 		bouncernouncer = transform.Find("BounceArrowDisp").gameObject;
-		bounce_hitbox =  transform.Find("BounceHitbox").GetComponent<PlayerBounceHitbox>();
-		bouncernouncer.SetActive (false);
+		bounce_hitbox = transform.Find("BounceHitbox").GetComponent<PlayerBounceHitbox>();
+
+		bouncernouncer.SetActive(false);
 	}
 
 	public void GetHit(int dmg) {
@@ -88,16 +91,17 @@ public class PlayerMovement : MonoBehaviour {
 			invulnera_time = 3.0f;
 			hp -= dmg;
 		}
-		Debug.Log (hp);
+
+		Debug.Log(hp);
 	}
 
 	void Update() {
 		invulnera_time -= Time.deltaTime;
 
 		if (invulnera_time >= 0) {
-			sprite.color = new Color (1f, 1f, 1f, 0.5f);
+			sprite.color = new Color(1f, 1f, 1f, 0.5f);
 		} else {
-			sprite.color = new Color (1f, 1f, 1f, 1f);
+			sprite.color = new Color(1f, 1f, 1f, 1f);
 		}
 
 		if (Input.GetButtonDown("Jump") && !is_bouncing) {
@@ -107,8 +111,8 @@ public class PlayerMovement : MonoBehaviour {
 		}
 
 		if (Input.GetButtonDown("Attack") && !is_bouncing) {
-			atk_hitbox.Attack ();
-			animator.SetTrigger ("atk");
+			atk_hitbox.Attack();
+			animator.SetTrigger("atk");
 		}
 
 		if (Input.GetButtonDown("Dash") && dash_cooldown_timer <= 0 && !is_dashing && !is_bouncing) {
@@ -123,6 +127,7 @@ public class PlayerMovement : MonoBehaviour {
 
 		if (Input.GetButton("Bounce") && is_charging_bounce) {
 			rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y * 0.065f);
+
 			bouncernouncer.SetActive(true);
 
 			float h = Input.GetAxisRaw("Horizontal");
@@ -133,7 +138,12 @@ public class PlayerMovement : MonoBehaviour {
 			}
 
 			float angle = Mathf.Atan2(v, h) * Mathf.Rad2Deg;
-			bouncernouncer.transform.rotation = Quaternion.Lerp (bouncernouncer.transform.rotation, Quaternion.Euler (0, 0, angle), 0.065f);
+
+			bouncernouncer.transform.rotation = Quaternion.Lerp(
+				bouncernouncer.transform.rotation,
+				Quaternion.Euler(0, 0, angle),
+				0.065f
+			);
 		}
 
 		if (Input.GetButtonUp("Bounce") && is_charging_bounce) {
@@ -141,9 +151,11 @@ public class PlayerMovement : MonoBehaviour {
 			is_bouncing = true;
 
 			bounce_direction = bouncernouncer.transform.right;
+
 			rb.velocity = bounce_direction * bounce_force;
 
 			current_bounce_decay = bounce_decay;
+
 			bounce_hitbox.can_atk = true;
 
 			bouncernouncer.SetActive(false);
@@ -156,22 +168,22 @@ public class PlayerMovement : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
+
 		if (is_bouncing) {
 			float speed = rb.velocity.magnitude;
 
-			// stop if too slow
 			if (speed <= bounce_min_speed) {
 				is_bouncing = false;
 				bounce_hitbox.can_atk = false;
 			} else {
-				// reduce velocity
+
 				rb.velocity = Vector2.MoveTowards(
 					rb.velocity,
 					Vector2.zero,
 					current_bounce_decay * Time.fixedDeltaTime
 				);
 
-				// mooore decay over time
+				// more decelratio?
 				current_bounce_decay += bounce_decay_increase * Time.fixedDeltaTime;
 
 				return;
@@ -186,22 +198,23 @@ public class PlayerMovement : MonoBehaviour {
 		}
 
 		hmovement = Input.GetAxis("Horizontal");
+
 		dir = (hmovement > 0) ? 1 : (hmovement < 0) ? -1 : dir;
+
 		sprite.flipX = (dir == -1);
 
 		if (can_move && !is_bouncing && !is_charging_bounce) {
-			rb.velocity = new Vector2 (
+			rb.velocity = new Vector2(
 				hmovement * movement_spd,
 				rb.velocity.y
 			);
 		} else {
-			rb.velocity = new Vector2 (
+			rb.velocity = new Vector2(
 				0,
 				rb.velocity.y
 			);
 		}
 
-		// floor crap
 		RaycastHit2D raycast_hit = Physics2D.BoxCast(
 			boxcollider.bounds.center,
 			boxcollider.bounds.size,
@@ -211,13 +224,16 @@ public class PlayerMovement : MonoBehaviour {
 		);
 
 		ground_touch = raycast_hit.collider != null;
-		ground_touch = ground_touch && (!raycast_hit.collider.CompareTag("NPC")) && (!raycast_hit.collider.CompareTag("Enemy")) && (!raycast_hit.collider.CompareTag("Boss")); // make sure you cant jump on npc's!
+
+		ground_touch = ground_touch &&
+			(!raycast_hit.collider.CompareTag("NPC")) &&
+			(!raycast_hit.collider.CompareTag("Enemy")) &&
+			(!raycast_hit.collider.CompareTag("Boss"));
 
 		if (ground_touch) {
 			has_air_dashed = false;
 		}
 
-		// Jump
 		if (ground_touch) {
 			coyote_timer = coyote_time;
 		} else {
@@ -231,8 +247,8 @@ public class PlayerMovement : MonoBehaviour {
 			coyote_timer = 0;
 		}
 
-		// Atk box
 		float py = atk_hitbox.transform.localPosition.y;
+
 		if (dir == 1) {
 			atk_hitbox.transform.localPosition = new Vector2(atk_range, py);
 		} else if (dir == -1) {
@@ -280,24 +296,55 @@ public class PlayerMovement : MonoBehaviour {
 	}
 
 	void OnCollisionEnter2D(Collision2D collision) {
+
 		if (is_bouncing) {
-			ContactPoint2D contact = collision.contacts[0];
 
-			bounce_direction = Vector2.Reflect(
-				bounce_direction,
-				contact.normal
-			).normalized;
+			// most up contact normal
+			Vector2 normal = collision.contacts[0].normal;
 
-			rb.velocity = bounce_direction * bounce_rebound_force;
-			current_bounce_decay -= bounce_decay;
+			foreach (ContactPoint2D contact in collision.contacts) {
+				if (contact.normal.y > normal.y) {
+					normal = contact.normal;
+				}
+			}
+
+			// FLOOOR collision
+			if (normal.y > 0.5f) {
+
+				// force moving up (i mean its prob fine)
+				float x_speed = bounce_direction.x * bounce_rebound_force;
+
+				float y_speed = Mathf.Max(
+					Mathf.Abs(bounce_direction.y) * bounce_rebound_force,
+					bounce_floor_min_up_speed
+				);
+
+				rb.velocity = new Vector2(x_speed, y_speed);
+
+				bounce_direction = rb.velocity.normalized;
+
+			} else {
+
+				// wall/ceilig
+				bounce_direction = Vector2.Reflect(
+					bounce_direction,
+					normal
+				).normalized;
+
+				rb.velocity = bounce_direction * bounce_rebound_force;
+			}
+
+			current_bounce_decay += bounce_rebound_decay_bonus;
 		}
 
-		if (collision.gameObject.CompareTag ("Enemy") || collision.gameObject.CompareTag ("Boss")) {
-			GetHit (1);
+		if (collision.gameObject.CompareTag("Enemy") ||
+			collision.gameObject.CompareTag("Boss")) {
+			GetHit(1);
 		}
-	}	
+	}
 
 	public void EnemRebound(Vector2 contact) {
+
 		Vector2 normal = (contact - (Vector2)transform.position).normalized;
 
 		bounce_direction = Vector2.Reflect(
@@ -306,6 +353,7 @@ public class PlayerMovement : MonoBehaviour {
 		).normalized;
 
 		rb.velocity = bounce_direction * bounce_rebound_force;
-		current_bounce_decay -= bounce_decay;
+
+		current_bounce_decay += bounce_rebound_decay_bonus;
 	}
 }
