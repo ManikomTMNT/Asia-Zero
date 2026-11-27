@@ -28,4 +28,13 @@ public class NPC : MonoBehaviour {
 			dia.StartDialogue ();
 		}
 	}
+
+	public IEnumerator IAction() {
+		if (!dia_object.activeSelf) {
+			dia.lines = lines;
+			dia.imgs = imgs;
+			dia.StartDialogue ();
+			yield return new WaitUntil (() => !dia_object.activeSelf);
+		}
+	}
 }

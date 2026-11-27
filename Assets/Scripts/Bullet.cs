@@ -8,6 +8,7 @@ public class Bullet : MonoBehaviour
 	public float lifeTime = 3f;
 	public int damage = 1;
 	public Vector2 dir = new Vector2(1, 0);
+	public float acc = 0f;
 
 	Rigidbody2D rb;
 
@@ -20,6 +21,10 @@ public class Bullet : MonoBehaviour
 		transform.rotation = Quaternion.Euler(0, 0, angle-90);
 
 		Destroy(gameObject, lifeTime);
+	}
+
+	void Update() {
+		speed += acc;
 	}
 
 	void OnTriggerEnter2D(Collider2D other)

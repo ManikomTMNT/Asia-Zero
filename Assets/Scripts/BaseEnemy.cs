@@ -6,7 +6,7 @@ public class BaseEnemy : MonoBehaviour {
 
 	float hp = 5;
 
-	float bullet_delay  = 0;
+	//float bullet_delay  = 0;
 
 	//[SerializeField] GameObject bullet_prefab;
 

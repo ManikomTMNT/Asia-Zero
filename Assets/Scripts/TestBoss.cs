@@ -29,6 +29,13 @@ public class TestBoss : BaseBoss
 	float slam_hover_time = 0.6f;
 	float slam_fall_speed = 20f;
 
+	bool active = false;
+
+	[SerializeField] GameObject wall1;
+	[SerializeField] GameObject wall2;
+
+	[SerializeField] GameObject TNPC;
+
 	public enum BossState {
 		Walk,
 		Jump,
@@ -64,6 +71,23 @@ public class TestBoss : BaseBoss
 		current_state = BossState.Walk;
 		timer = 0;
 		spr = GetComponent<SpriteRenderer>();
+	}
+
+	public void IntroCutscene() {
+		StartCoroutine (IIntroCutscene ());
+	}
+
+	IEnumerator IIntroCutscene() {
+		GameObject.FindGameObjectWithTag ("Player").GetComponent<PlayerMovement> ().can_move = false;
+		wall1.SetActive(true);
+		wall2.SetActive(true);
+
+		yield return new WaitForSeconds (1f);
+
+		yield return StartCoroutine(TNPC.GetComponent<NPC> ().IAction());
+		GameObject.FindGameObjectWithTag ("Player").GetComponent<PlayerMovement> ().can_move = true;
+
+		active = true;
 	}
 
 	void Update()
@@ -162,7 +186,7 @@ public class TestBoss : BaseBoss
 
 		timer += Time.deltaTime;
 
-		if (timer >= 1f) {
+		if (timer >= 1f && active) {
 			SwitchState(Crap.Choose<BossState> (BossState.Walk, BossState.Slash, BossState.BulletShot, BossState.Slam));
 		}
 	}
