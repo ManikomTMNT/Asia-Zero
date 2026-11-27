@@ -68,7 +68,7 @@ public class TestBoss : BaseBoss
 		rb = GetComponent<Rigidbody2D>();
 		player = GameObject.FindGameObjectWithTag("Player").transform;
 
-		current_state = BossState.Walk;
+		current_state = BossState.Idle;
 		timer = 0;
 		spr = GetComponent<SpriteRenderer>();
 	}
@@ -184,9 +184,11 @@ public class TestBoss : BaseBoss
 	void Idle()	{
 		rb.velocity = Vector2.zero;
 
-		timer += Time.deltaTime;
+		if (active) {
+			timer += Time.deltaTime;
+		}
 
-		if (timer >= 1f && active) {
+		if (timer >= 1f) {
 			SwitchState(Crap.Choose<BossState> (BossState.Walk, BossState.Slash, BossState.BulletShot, BossState.Slam));
 		}
 	}
