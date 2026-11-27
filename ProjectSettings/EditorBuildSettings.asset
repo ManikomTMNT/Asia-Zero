@@ -10,4 +10,7 @@ EditorBuildSettings:
     guid: cc82fd9376540034fabb08ed3278fa38
   - enabled: 1
     path: Assets/Scenes/valgooo.unity
+    guid: 9eb6932ed52f4d44992137a98ec1360c
+  - enabled: 1
+    path: Assets/Scenes/ReasonyArena.unity
     guid: 00000000000000000000000000000000
