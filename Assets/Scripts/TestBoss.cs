@@ -6,9 +6,9 @@ public class TestBoss : BaseBoss
 {
 	Rigidbody2D rb;
 
-	float walk_speed = 4f;
+	float walk_speed = 3f;
 	float jump_force = 14f;
-	float hp = 220;
+	float hp = 20;
 
 	BoxCollider2D boxcollider;
 	bool ground_touch = false;
@@ -35,6 +35,7 @@ public class TestBoss : BaseBoss
 	[SerializeField] GameObject wall2;
 
 	[SerializeField] GameObject TNPC;
+	[SerializeField] GameObject TNPC2;
 
 	public enum BossState {
 		Walk,
@@ -90,6 +91,23 @@ public class TestBoss : BaseBoss
 		active = true;
 	}
 
+	IEnumerator IDefeatCutscene() {
+		GameObject.FindGameObjectWithTag ("Player").GetComponent<PlayerMovement> ().can_move = false;
+		SwitchState (BossState.Idle);
+
+		active = false;
+		wall1.SetActive(false);
+		wall2.SetActive(false);
+
+		yield return new WaitForSeconds (1f);
+
+		yield return StartCoroutine(TNPC2.GetComponent<NPC> ().IAction());
+
+		GameObject.FindGameObjectWithTag ("Player").GetComponent<PlayerMovement> ().can_move = true;
+
+		active = true;
+	}
+
 	void Update()
 	{
 		switch (current_state) {
@@ -122,17 +140,19 @@ public class TestBoss : BaseBoss
 	}
 
 	void Walk() {
-		float direction = Mathf.Sign(player.position.x - transform.position.x);
+		if (timer >= 0.3f) {
+			float direction = Mathf.Sign (player.position.x - transform.position.x);
 
-		rb.velocity = new Vector2(walk_speed * direction, rb.velocity.y);
+			rb.velocity = new Vector2 (walk_speed * direction, rb.velocity.y);
 
-		spr.flipX = direction < 0;
+			spr.flipX = direction < 0;
 
-		anim.SetBool("walking", true);
+			anim.SetBool ("walking", true);
+		}
 
 		timer += Time.deltaTime;
 
-		if (timer >= 0.85f || Mathf.Abs(player.position.x - transform.position.x) < 0.2) {
+		if (timer >= 1.05f || Mathf.Abs(player.position.x - transform.position.x) < 0.2) {
 			SwitchState(Crap.Choose<BossState>(
 				BossState.Slash,
 				BossState.Jump,
@@ -208,11 +228,21 @@ public class TestBoss : BaseBoss
 		}
 
 		if (timer >= 1.7f) {
-			anim.SetBool ("slashing", false);
-			SwitchState(Crap.Choose<BossState> (BossState.Walk, BossState.BulletShot, BossState.Idle, BossState.Jump, BossState.Slam));
+			anim.SetBool("slashing", false);
 
-			if (Mathf.Abs (player.position.x - transform.position.x) < 0.6f) {
-				SwitchState (BossState.Walk);
+			if (Mathf.Abs(player.position.x - transform.position.x) < 1.5f) {
+				SwitchState(Crap.Choose<BossState>(
+					BossState.Slash,
+					BossState.BulletShot,
+					BossState.Idle,
+					BossState.Jump,
+					BossState.Slam
+				));
+			} else {
+				SwitchState(Crap.Choose<BossState>(
+					BossState.Walk,
+					BossState.Jump
+				));
 			}
 		}
 	}
@@ -343,7 +373,7 @@ public class TestBoss : BaseBoss
 		StartCoroutine(Flash());
 
 		if (hp <= 0) {
-			Destroy(gameObject);
+			StartCoroutine (IDefeatCutscene());
 		}
 	}
 

@@ -28,16 +28,11 @@ public class PlayerMovement : MonoBehaviour {
 	Vector2 bounce_direction;
 
 	[SerializeField] float bounce_force = 15f;
+
 	PlayerBounceHitbox bounce_hitbox;
 
-	[SerializeField] float bounce_decay = 1.5f;
-	float bounce_decay_increase = 7f;
-	[SerializeField] float bounce_min_speed = 5f;
-	[SerializeField] float bounce_rebound_force = 15f;
-	[SerializeField] float bounce_rebound_decay_bonus = 0.5f;
-	[SerializeField] float bounce_floor_min_up_speed = 6f;
-
-	float current_bounce_decay;
+	[SerializeField] float bounce_duration = 2f;
+	float bounce_timer = 0f;
 
 	[SerializeField] float coyote_time = 0.2f;
 	[SerializeField] float jump_buffer_time = 0.15f;
@@ -121,6 +116,7 @@ public class PlayerMovement : MonoBehaviour {
 			}
 		}
 
+		// BOUNCE CRAP
 		if (Input.GetButtonDown("Bounce") && !is_bouncing) {
 			is_charging_bounce = true;
 		}
@@ -150,42 +146,33 @@ public class PlayerMovement : MonoBehaviour {
 			is_charging_bounce = false;
 			is_bouncing = true;
 
-			bounce_direction = bouncernouncer.transform.right;
+			bounce_timer = bounce_duration;
 
+			bounce_direction = bouncernouncer.transform.right;
 			rb.velocity = bounce_direction * bounce_force;
 
-			current_bounce_decay = bounce_decay;
-
 			bounce_hitbox.can_atk = true;
-
 			bouncernouncer.SetActive(false);
 		}
 
 		if (Input.GetButtonDown("Bounce") && is_bouncing) {
 			bounce_hitbox.can_atk = false;
 			is_bouncing = false;
+			bounce_timer = 0f;
 		}
 	}
 
 	void FixedUpdate() {
 
 		if (is_bouncing) {
-			float speed = rb.velocity.magnitude;
+			rb.velocity = bounce_direction * bounce_force;
 
-			if (speed <= bounce_min_speed) {
+			bounce_timer -= Time.fixedDeltaTime;
+
+			if (bounce_timer <= 0f) {
 				is_bouncing = false;
 				bounce_hitbox.can_atk = false;
 			} else {
-
-				rb.velocity = Vector2.MoveTowards(
-					rb.velocity,
-					Vector2.zero,
-					current_bounce_decay * Time.fixedDeltaTime
-				);
-
-				// more decelratio?
-				current_bounce_decay += bounce_decay_increase * Time.fixedDeltaTime;
-
 				return;
 			}
 		}
@@ -298,43 +285,14 @@ public class PlayerMovement : MonoBehaviour {
 	void OnCollisionEnter2D(Collision2D collision) {
 
 		if (is_bouncing) {
+			ContactPoint2D contact = collision.contacts[0];
 
-			// most up contact normal
-			Vector2 normal = collision.contacts[0].normal;
+			bounce_direction = Vector2.Reflect(
+				bounce_direction,
+				contact.normal
+			).normalized;
 
-			foreach (ContactPoint2D contact in collision.contacts) {
-				if (contact.normal.y > normal.y) {
-					normal = contact.normal;
-				}
-			}
-
-			// FLOOOR collision
-			if (normal.y > 0.5f) {
-
-				// force moving up (i mean its prob fine)
-				float x_speed = bounce_direction.x * bounce_rebound_force;
-
-				float y_speed = Mathf.Max(
-					Mathf.Abs(bounce_direction.y) * bounce_rebound_force,
-					bounce_floor_min_up_speed
-				);
-
-				rb.velocity = new Vector2(x_speed, y_speed);
-
-				bounce_direction = rb.velocity.normalized;
-
-			} else {
-
-				// wall/ceilig
-				bounce_direction = Vector2.Reflect(
-					bounce_direction,
-					normal
-				).normalized;
-
-				rb.velocity = bounce_direction * bounce_rebound_force;
-			}
-
-			current_bounce_decay += bounce_rebound_decay_bonus;
+			rb.velocity = bounce_direction * bounce_force;
 		}
 
 		if (collision.gameObject.CompareTag("Enemy") ||
@@ -344,7 +302,6 @@ public class PlayerMovement : MonoBehaviour {
 	}
 
 	public void EnemRebound(Vector2 contact) {
-
 		Vector2 normal = (contact - (Vector2)transform.position).normalized;
 
 		bounce_direction = Vector2.Reflect(
@@ -352,8 +309,6 @@ public class PlayerMovement : MonoBehaviour {
 			normal
 		).normalized;
 
-		rb.velocity = bounce_direction * bounce_rebound_force;
-
-		current_bounce_decay += bounce_rebound_decay_bonus;
+		rb.velocity = bounce_direction * bounce_force;
 	}
 }

@@ -28,8 +28,8 @@ AnimationClip:
       - serializedVersion: 2
         time: 0.33333334
         value: -265
-        inSlope: -162.01384
-        outSlope: -162.01384
+        inSlope: 637.6555
+        outSlope: 637.6555
         tangentMode: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
@@ -110,8 +110,8 @@ AnimationClip:
       - serializedVersion: 2
         time: 0.33333334
         value: -265
-        inSlope: -162.01384
-        outSlope: -162.01384
+        inSlope: 637.6555
+        outSlope: 637.6555
         tangentMode: 0
       m_PreInfinity: 2
       m_PostInfinity: 2

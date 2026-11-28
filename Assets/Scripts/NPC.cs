@@ -7,6 +7,7 @@ public class NPC : MonoBehaviour {
 	[SerializeField] GameObject dia_object;
 	public string[] lines;
 	public Sprite[] imgs;
+	public Sprite[] imgs_r;
 	Dialogue dia;
 
 	public bool player_in_range = false;
@@ -33,6 +34,7 @@ public class NPC : MonoBehaviour {
 		if (!dia_object.activeSelf) {
 			dia.lines = lines;
 			dia.imgs = imgs;
+			dia.imgs_r = imgs_r;
 			dia.StartDialogue ();
 			yield return new WaitUntil (() => !dia_object.activeSelf);
 		}
